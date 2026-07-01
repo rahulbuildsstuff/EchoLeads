@@ -40,10 +40,19 @@ wss.on('connection', (ws) => {
       agent.processAudio(data.media.payload); // Pass raw audio to the AI
     } else if (data.event === 'stop') {
       console.log('❌ Audio stream stopped.');
+       if (agent) {
+          agent.cleanup(); // 🚨 NEW: Forcefully kill all AI background tasks!
+      }
       agent = null; 
     }
   });
-  ws.on('close', () => { agent = null; });
+  ws.on('close', () => {
+    console.log('❌ Twilio WebSocket connection closed.');
+    if (agent) {
+        agent.cleanup(); // 🚨 NEW: Catch unexpected disconnections too
+    }
+    agent = null;
+  });
 });
 
 app.post('/api/twiml', (req, res) => {
