@@ -10,12 +10,10 @@ const AiAgent = require('./AiAgent');
 
 const app = express();
 app.use(cors());
-app.use(express.json()); // Allows Express to parse JSON data from React
-
+app.use(express.json()); 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server, path: '/audio-stream' });
 
-// 1. Initialize API Clients
 const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
 const transporter = nodemailer.createTransport({
@@ -35,13 +33,13 @@ wss.on('connection', (ws) => {
     
     if (data.event === 'start') {
       console.log('🎙️ Audio stream started. ID:', data.start.streamSid);
-      agent = new AiAgent(ws, data.start.streamSid); // Boot up the AI Brain!
+      agent = new AiAgent(ws, data.start.streamSid); 
     } else if (data.event === 'media' && agent) {
-      agent.processAudio(data.media.payload); // Pass raw audio to the AI
+      agent.processAudio(data.media.payload); 
     } else if (data.event === 'stop') {
       console.log('❌ Audio stream stopped.');
        if (agent) {
-          agent.cleanup(); // 🚨 NEW: Forcefully kill all AI background tasks!
+          agent.cleanup(); 
       }
       agent = null; 
     }
@@ -49,7 +47,7 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     console.log('❌ Twilio WebSocket connection closed.');
     if (agent) {
-        agent.cleanup(); // 🚨 NEW: Catch unexpected disconnections too
+        agent.cleanup(); 
     }
     agent = null;
   });
@@ -66,7 +64,6 @@ app.post('/api/twiml', (req, res) => {
   res.send(twiml);
 });
 
-// 2. The Main API Route
 app.post('/api/inquiry', (req, res) => {
   const { name, email, phone } = req.body;
 
@@ -74,16 +71,13 @@ app.post('/api/inquiry', (req, res) => {
     return res.status(400).json({ error: 'Please provide all details.' });
   }
 
-  // Instantly reply to the React frontend
   res.status(200).json({ message: 'Inquiry received successfully!' });
 
-  // 3. Fire parallel background notifications
   sendEmailNotification(name, email).catch(console.error);
   sendWhatsAppNotification(name, phone).catch(console.error);
   triggerAICall(name, phone).catch(console.error); 
 });
 
-// --- Helper Functions ---
 
 async function sendEmailNotification(name, userEmail) {
   const mailOptions = {
@@ -101,7 +95,6 @@ async function sendEmailNotification(name, userEmail) {
 }
 
 async function sendWhatsAppNotification(name, phone) {
-  // Ensure the phone number has a + country code (e.g., +919876543210)
   const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`; 
   
   await twilioClient.messages.create({
@@ -116,8 +109,6 @@ async function sendWhatsAppNotification(name, phone) {
 async function triggerAICall(name, phone) {
   const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`; 
   
-  // 1. We are hardcoding the EXACT URL here to bypass any .env errors.
-  // We also added the Ngrok warning bypass just to be safe!
   const twilioInstructionsUrl = 'https://tropics-oxymoron-mortality.ngrok-free.dev/api/twiml?ngrok-skip-browser-warning=true';
   
   console.log(`🔗 Telling Twilio to fetch instructions from: ${twilioInstructionsUrl}`);
@@ -134,7 +125,7 @@ async function triggerAICall(name, phone) {
   }
 }
 
-// Start Server
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

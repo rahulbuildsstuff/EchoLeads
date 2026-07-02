@@ -10,7 +10,7 @@ function App() {
   } = useForm();
   
   const [statusMessage, setStatusMessage] = useState('');
-  const [statusType, setStatusType] = useState(''); // 'success' or 'error'
+  const [statusType, setStatusType] = useState(''); 
 
   const onSubmit = async (data) => {
     setStatusMessage('Sending details to EchoLeads server...');
